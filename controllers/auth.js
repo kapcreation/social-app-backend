@@ -45,10 +45,6 @@ export const login = (req, res) => {
     const { password, ...others } = data[0];
 
     res
-      .clearCookie('accessToken', {
-        secure: true,
-        sameSite: 'none'
-      })
       .cookie("accessToken", token, {
         httpOnly: true,
       })
