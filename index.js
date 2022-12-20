@@ -15,6 +15,10 @@ app.use(express.json())
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }))
 app.use(cookieParser())
 
+app.get('/', (req, res) => {
+  res.send('APP IS RUNNING!')
+})
+
 app.use('/auth', authRoutes)
 app.use('/users', userRoutes)
 app.use('/posts', postRoutes)
