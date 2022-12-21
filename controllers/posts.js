@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken'
 import moment from 'moment'
 
 export const getPosts = (req, res) => {
-  const token = req.cookies.accessToken
+  const token = req.headers.authorization.split(" ")[1];
+
   if (!token) return res.status(401).json('Not logged in!')
 
   const context = req.query.context
@@ -41,7 +42,8 @@ export const getPosts = (req, res) => {
 }
 
 export const createPosts = (req, res) => {
-  const token = req.cookies.accessToken
+  const token = req.headers.authorization.split(" ")[1];
+
   if (!token) return res.status(401).json('Not logged in!')
 
   jwt.verify(token, 'secretkey', async (err, userInfo) => {
@@ -65,7 +67,8 @@ export const createPosts = (req, res) => {
 }
 
 export const deletePost = (req, res) => {
-  const token = req.cookies.accessToken
+  const token = req.headers.authorization.split(" ")[1];
+  
   if (!token) return res.status(401).json('Not logged in!')
 
   jwt.verify(token, 'secretkey', (err, userInfo) => {
