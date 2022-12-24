@@ -2,15 +2,9 @@ import { db } from '../connect.js'
 import jwt from 'jsonwebtoken'
 import moment from 'moment'
 
-export const getPosts = (req, res) => {
-  const token = req.headers.authorization.split(" ")[1];
-
-  if (!token) return res.status(401).json('Not logged in!')
-
-  const context = req.query.context
-
-  jwt.verify(token, 'secretkey', (err, userInfo) => {
-    if (err) return res.status(403).json('Token is not valid!')
+export const getPosts = async (req, res) => {
+  try {
+    const context = req.query.context
 
     let q = ``
     let values = []
@@ -23,7 +17,7 @@ export const getPosts = (req, res) => {
           JOIN users AS u ON (u.id = p.userId) 
           ORDER BY p.createdAt DESC      
         `
-        values = [userInfo.id, userInfo.id]
+        values = [req.userInfo.id, req.userInfo.id]
         break
       case 'profile':
         q = `SELECT p.*, u.id AS userId, name, profilePic FROM posts AS p JOIN users AS u ON (u.id = p.userId) WHERE p.userId = ? ORDER BY p.createdAt DESC`
@@ -33,59 +27,45 @@ export const getPosts = (req, res) => {
         break
     }
 
-    db.query(q, values, (err, data) => {
-      if (err) return res.status(500).json(err)
-      
-      return res.status(200).json(data)
-    })
-  })
+    const [data] = await db.query(q, values)
+    
+    return res.status(200).json(data)
+  } catch (error) {
+    return res.status(500).json(error.message)
+  }
 }
 
-export const createPosts = (req, res) => {
-  const token = req.headers.authorization.split(" ")[1];
-
-  if (!token) return res.status(401).json('Not logged in!')
-
-  jwt.verify(token, 'secretkey', async (err, userInfo) => {
-    if (err) return res.status(403).json(err)
-
+export const createPosts = async (req, res) => {
+  try {
     const q = "INSERT INTO posts (`desc`,`img`,`createdAt`,`userId`) VALUES (?)"
 
     const values = [
       req.body.desc,
       req.body.imgUrl,
       moment(Date.now()).format('YYYY-MM-DD HH:mm:ss'),
-      userInfo.id
+      req.userInfo.id
     ]
 
-    db.query(q, [values], (err, data) => {
-      if (err) res.status(500).json(err)
-
-      return res.status(200).json('Post has been created!')
-    })
-  })
+    await db.query(q, [values])
+    return res.status(200).json('Post has been created!')
+  } catch (error) {
+    return res.status(500).json(error.message)
+  }
 }
 
-export const deletePost = (req, res) => {
-  const token = req.headers.authorization.split(" ")[1];
-  
-  if (!token) return res.status(401).json('Not logged in!')
-
-  jwt.verify(token, 'secretkey', (err, userInfo) => {
-    if (err) return res.status(403).json(err)
-
+export const deletePost = async (req, res) => {
+  try {
     const q = "DELETE FROM posts WHERE `id`=? AND `userId`=?"
 
     const values = [
       req.params.id,
-      userInfo.id
+      req.userInfo.id
     ]
 
-    db.query(q, values, (err, data) => {
-      if (err) res.status(500).json(err)
-
-      if (data.affectedRows > 0) return res.status(200).json('Post has been created!')
-      return res.status(403).json('Nothing deleted!')
-    })
-  })
+    const [data] = await db.query(q, values)
+    if (data.affectedRows > 0) return res.status(200).json('Post has been created!')
+    return res.status(403).json('Nothing deleted!')
+  } catch (error) {
+    return res.status(500).json(err.message)
+  }
 }
